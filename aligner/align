@@ -15,6 +15,7 @@ e_data = "%s.%s" % (opts.train, opts.english)
 
 sys.stderr.write("Training with Dice's coefficient...")
 bitext = [[sentence.strip().split() for sentence in pair] for pair in zip(open(f_data), open(e_data))[:opts.num_sents]]
+print bitext
 f_count = defaultdict(int)
 e_count = defaultdict(int)
 fe_count = defaultdict(int)
@@ -36,7 +37,7 @@ for (k, (f_i, e_j)) in enumerate(fe_count.keys()):
 sys.stderr.write("\n")
 
 for (f, e) in bitext:
-  for (i, f_i) in enumerate(f): 
+  for (i, f_i) in enumerate(f):
     for (j, e_j) in enumerate(e):
       if dice[(f_i,e_j)] >= opts.threshold:
         sys.stdout.write("%i-%i " % (i,j))
