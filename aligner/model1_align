@@ -20,12 +20,13 @@ e_data = "%s.%s" % (opts.train, opts.english)
 # Each element is a 2-element array, [0] is the french translation of the sentence, and [1] is the english translation.
 bitext = [[sentence.strip().split() for sentence in pair] for pair in zip(open(f_data), open(e_data))[:opts.num_sents]]
 
+e_count = set()
 f_count = set()
-f_prob = defaultdict(float)
-total = defaultdict(int)
-s_total = defaultdict(int)
+f_prob = defaultdict(Decimal)
+total = defaultdict(Decimal)
+s_total = defaultdict(Decimal)
 
-count = defaultdict(int)
+count = defaultdict(Decimal)
 uniform_t = 0
 t = defaultdict(Decimal)
 
@@ -39,15 +40,33 @@ for (n, (f, e)) in enumerate(bitext):
     for f_i in f:
         f_count.add(f_i)
         for e_i in e:
+            e_count.add(e_i)
             t[(e_i, f_i)] = 0
 
 # default value provided as uniform probability)
 uniform_t = Decimal(1/len(f_count))
 
 for fe in t:
+    print fe
     t[fe] = uniform_t
 
+# init loop
+for (n, (f, e)) in enumerate(bitext):
+    for e_i in e:
+        s_total[e_i] = 0
+        for f_i in f:
+            s_total[e_i] += t[(e_i,f_i)]
 
+    for e_i in e:
+        for f_i in f:
+            count[(e_i,f_i)] += t[(e_i,f_i)] / s_total[e_i]
+            total[f_i] += t[(e_i,f_i)] / s_total[e_i]
+
+for f_i in f_count:
+    for e_i in e_count:
+        t[(e_i,f_i)] = count[(e_i,f_i)] / total[f_i]
+
+print t
 
 #
 #     print 'Calculating uniform probability...'
