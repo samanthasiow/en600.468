@@ -32,11 +32,6 @@ t = defaultdict(Decimal)
 fe_alignments = {}
 fe_weights = {}
 
-def _constant_factory(value):
-    '''define a local function for uniform probability initialization'''
-    #return itertools.repeat(value).next
-    return lambda: value
-
 for (n, (f, e)) in enumerate(bitext):
     # TODO: Remove punctuation?
     # TODO: Add 'null' option for english text
@@ -52,7 +47,8 @@ uniform_t = Decimal(1/len(f_count))
 for fe in t:
     t[fe] = uniform_t
 
-print t
+
+
 #
 #     print 'Calculating uniform probability...'
 #     for f_i in f:
