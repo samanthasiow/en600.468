@@ -35,7 +35,6 @@ for (f,e) in bitext_raw:
     e.append('')
     bitext.append([f,e])
 
-
 uniform_t = 0
 t = defaultdict(Decimal)
 
@@ -55,10 +54,12 @@ for (n, (f, e)) in enumerate(bitext):
 # default value provided as uniform probability)
 uniform_t = Decimal(1/len(f_count))
 
+# init to uniform prob
 for fe in t:
     t[fe] = uniform_t
 
 # init loop
+# see koehn's pseudocode
 for i in range(opts.iterations):
     count = defaultdict(Decimal)
     total = defaultdict(Decimal)
@@ -83,6 +84,7 @@ for (f, e) in bitext:
         max_t = 0
         max_align = 0
         for (j, e_j) in enumerate(e):
+            # choose highest probability of all alignments
             if max_t < t[(e_j,f_i)]:
                 max_t = t[(e_j,f_i)]
                 max_align = j
