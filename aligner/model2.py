@@ -68,10 +68,10 @@ for (n, (f, e)) in enumerate(bitext):
 for (n, (f, e)) in enumerate(bitext):
     l_e = len(e)
     l_f = len(f)
-    for f_i in f:
-        for e_i in e:
+    for (j, e_i) in enumerate(e, 1):
+        for (i, f_i) in enumerate(f):
             t[(e_i, f_i)] = 0
-            a[(e_i, f_i, l_e, l_f)] = 0
+            a[(i, j, l_e, l_f)] = 0
 
 for (n, (f, e)) in enumerate(bitext):
     l_e = len(e)
