@@ -23,10 +23,8 @@ decimal.getcontext().rounding = decimal.ROUND_HALF_UP
 
 # Contains an array of all sentences in the text
 # Each element is a 2-element array, [0] is the french translation of the sentence, and [1] is the english translation.
-bitext_raw = [[sentence.strip().split() for sentence in pair] for pair in zip(open(f_data), open(e_data))[:opts.num_sents]]
 
-bitext = []
-
+''' Add null character to the translated text. '''
 def add_null(bitext_raw):
     bitext = []
     # add in the null character
@@ -38,8 +36,9 @@ def add_null(bitext_raw):
 
 ''' Trains the model on the corpus.
     Params:
-        bitext      Corpus to train on.'''
-def train_model(bitext):
+        bitext      Corpus to train on.
+        iterations  Number of times to iterate for EM. '''
+def train_model(bitext, iterations):
     e_count = set()
     f_count = set()
     f_prob = defaultdict(Decimal)
@@ -66,7 +65,7 @@ def train_model(bitext):
 
     # init loop
     # see koehn's pseudocode
-    for i in range(opts.iterations):
+    for i in range(iterations):
         count = defaultdict(Decimal)
         total = defaultdict(Decimal)
         for (n, (f, e)) in enumerate(bitext):
@@ -89,7 +88,7 @@ def train_model(bitext):
 ''' Aligns all the phrases in a given bitext corpus.
     Params:
         t   translation probability'''
-def align(t):
+def align(t, bitext):
     # alignment
     for (f, e) in bitext:
         for (i, f_i) in enumerate(f):
@@ -104,6 +103,8 @@ def align(t):
         sys.stdout.write("\n")
 
 if __name__ == '__main__':
+    bitext_raw = [[sentence.strip().split() for sentence in pair] for pair in zip(open(f_data), open(e_data))[:opts.num_sents]]
+
     bitext = add_null(bitext_raw)
-    t = train_model(bitext)
-    align(t)
+    t = train_model(bitext, opts.iterations)
+    align(t, bitext)
