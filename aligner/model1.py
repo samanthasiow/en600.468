@@ -26,6 +26,7 @@ decimal.getcontext().rounding = decimal.ROUND_HALF_UP
 
 ''' Add null character to the translated text. '''
 def add_null(bitext_raw):
+    sys.stderr.write('Adding null character to the translated text.\n')
     bitext = []
     # add in the null character
     for (f,e) in bitext_raw:
@@ -39,6 +40,7 @@ def add_null(bitext_raw):
         bitext      Corpus to train on.
         iterations  Number of times to iterate for EM. '''
 def train_model(bitext, iterations):
+    sys.stderr.write('Training model...\n')
     e_count = set()
     f_count = set()
     f_prob = defaultdict(Decimal)
@@ -47,6 +49,8 @@ def train_model(bitext, iterations):
     uniform_t = 0
     t = defaultdict(Decimal)
 
+    sys.stderr.write('\tCounting f,e in bitext...\n')
+    sys.stderr.write('\tInitializing t to 0...\n')
     for (n, (f, e)) in enumerate(bitext):
         # TODO: Remove punctuation?
 
@@ -60,12 +64,15 @@ def train_model(bitext, iterations):
     uniform_t = Decimal(1/len(f_count))
 
     # init to uniform prob
+    sys.stderr.write('\tSetting t to uniform probability...\n')
     for fe in t:
         t[fe] = uniform_t
 
     # init loop
     # see koehn's pseudocode
+    sys.stderr.write('\tStarting EM iterations...\n')
     for i in range(iterations):
+        sys.stderr.write("\t\tBeginning iteration: %i\n" % i)
         count = defaultdict(Decimal)
         total = defaultdict(Decimal)
         for (n, (f, e)) in enumerate(bitext):
@@ -79,6 +86,7 @@ def train_model(bitext, iterations):
                     count[(e_i,f_i)] += t[(e_i,f_i)] / s_total[e_i]
                     total[f_i] += t[(e_i,f_i)] / s_total[e_i]
 
+        sys.stderr.write('\t\tRecalculating translation probability...\n')
         for f_i in f_count:
             for e_i in e_count:
                 t[(e_i,f_i)] = count[(e_i,f_i)] / total[f_i]
@@ -90,6 +98,7 @@ def train_model(bitext, iterations):
         t   translation probability'''
 def align(t, bitext):
     # alignment
+    sys.stderr.write('Beginning alignment...\n')
     for (f, e) in bitext:
         for (i, f_i) in enumerate(f):
             max_t = 0
