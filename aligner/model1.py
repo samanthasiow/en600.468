@@ -44,7 +44,7 @@ def train_model(bitext):
     f_count = set()
     f_prob = defaultdict(Decimal)
     s_total = defaultdict(Decimal)
-    
+
     uniform_t = 0
     t = defaultdict(Decimal)
 
