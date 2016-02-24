@@ -34,12 +34,6 @@ def add_null(bitext_raw):
         e.append('')
         bitext.append([f,e])
 
-    uniform_t = 0
-    t = defaultdict(Decimal)
-
-    fe_alignments = {}
-    fe_weights = {}
-
     return bitext
 
 ''' Trains the model on the corpus.
@@ -50,6 +44,9 @@ def train_model(bitext):
     f_count = set()
     f_prob = defaultdict(Decimal)
     s_total = defaultdict(Decimal)
+    
+    uniform_t = 0
+    t = defaultdict(Decimal)
 
     for (n, (f, e)) in enumerate(bitext):
         # TODO: Remove punctuation?
@@ -105,3 +102,8 @@ def align(t):
                     max_align = j
             sys.stdout.write("%i-%i " % (i,max_align))
         sys.stdout.write("\n")
+
+if __name__ == '__main__':
+    bitext = add_null(bitext_raw)
+    t = train_model(bitext)
+    align(t)
