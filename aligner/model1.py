@@ -51,9 +51,9 @@ def train_model(bitext, iterations):
 
     sys.stderr.write('\tCounting f,e in bitext...\n')
     sys.stderr.write('\tInitializing t to 0...\n')
+    sys.stderr.write('\t\t')
     for (n, (f, e)) in enumerate(bitext):
-        # TODO: Remove punctuation?
-
+        sys.stderr.write('.')
         for f_i in f:
             f_count.add(f_i)
             for e_i in e:
@@ -72,10 +72,11 @@ def train_model(bitext, iterations):
     # see koehn's pseudocode
     sys.stderr.write('\tStarting EM iterations...\n')
     for i in range(iterations):
-        sys.stderr.write("\t\tBeginning iteration: %i\n" % i)
+        sys.stderr.write("\n\t\tBeginning iteration: %i\n" % i)
         count = defaultdict(Decimal)
         total = defaultdict(Decimal)
         for (n, (f, e)) in enumerate(bitext):
+            sys.stderr.write("\t\t\tCalculating for line: %i\n" % n)
             for e_i in e:
                 s_total[e_i] = 0
                 for f_i in f:
@@ -88,6 +89,7 @@ def train_model(bitext, iterations):
 
         sys.stderr.write('\t\tRecalculating translation probability...\n')
         for f_i in f_count:
+            sys.stderr.write('.')
             for e_i in e_count:
                 t[(e_i,f_i)] = count[(e_i,f_i)] / total[f_i]
 
