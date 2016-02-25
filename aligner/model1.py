@@ -23,11 +23,10 @@ decimal.getcontext().rounding = decimal.ROUND_HALF_UP
 
 # Contains an array of all sentences in the text
 # Each element is a 2-element array, [0] is the french translation of the sentence, and [1] is the english translation.
-bitext_raw = [[sentence.strip().split() for sentence in pair] for pair in zip(open(f_data), open(e_data))[:opts.num_sents]]
 
-bitext = []
-
+''' Add null character to the translated text. '''
 def add_null(bitext_raw):
+    sys.stderr.write('Adding null character to the translated text.\n')
     bitext = []
     # add in the null character
     for (f,e) in bitext_raw:
@@ -38,16 +37,20 @@ def add_null(bitext_raw):
 
 ''' Trains the model on the corpus.
     Params:
-        bitext      Corpus to train on.'''
-def train_model(bitext):
+        bitext      Corpus to train on.
+        iterations  Number of times to iterate for EM. '''
+def train_model(bitext, iterations):
+    sys.stderr.write('Training model...\n')
     e_count = set()
     f_count = set()
     f_prob = defaultdict(Decimal)
     s_total = defaultdict(Decimal)
-    
+
     uniform_t = 0
     t = defaultdict(Decimal)
 
+    sys.stderr.write('\tCounting f,e in bitext...\n')
+    sys.stderr.write('\tInitializing t to 0...\n')
     for (n, (f, e)) in enumerate(bitext):
         # TODO: Remove punctuation?
 
@@ -61,12 +64,15 @@ def train_model(bitext):
     uniform_t = Decimal(1/len(f_count))
 
     # init to uniform prob
+    sys.stderr.write('\tSetting t to uniform probability...\n')
     for fe in t:
         t[fe] = uniform_t
 
     # init loop
     # see koehn's pseudocode
-    for i in range(opts.iterations):
+    sys.stderr.write('\tStarting EM iterations...\n')
+    for i in range(iterations):
+        sys.stderr.write("\t\tBeginning iteration: %i\n" % i)
         count = defaultdict(Decimal)
         total = defaultdict(Decimal)
         for (n, (f, e)) in enumerate(bitext):
@@ -80,6 +86,7 @@ def train_model(bitext):
                     count[(e_i,f_i)] += t[(e_i,f_i)] / s_total[e_i]
                     total[f_i] += t[(e_i,f_i)] / s_total[e_i]
 
+        sys.stderr.write('\t\tRecalculating translation probability...\n')
         for f_i in f_count:
             for e_i in e_count:
                 t[(e_i,f_i)] = count[(e_i,f_i)] / total[f_i]
@@ -89,8 +96,9 @@ def train_model(bitext):
 ''' Aligns all the phrases in a given bitext corpus.
     Params:
         t   translation probability'''
-def align(t):
+def align(t, bitext):
     # alignment
+    sys.stderr.write('Beginning alignment...\n')
     for (f, e) in bitext:
         for (i, f_i) in enumerate(f):
             max_t = 0
@@ -104,6 +112,8 @@ def align(t):
         sys.stdout.write("\n")
 
 if __name__ == '__main__':
+    bitext_raw = [[sentence.strip().split() for sentence in pair] for pair in zip(open(f_data), open(e_data))[:opts.num_sents]]
+
     bitext = add_null(bitext_raw)
-    t = train_model(bitext)
-    align(t)
+    t = train_model(bitext, opts.iterations)
+    align(t, bitext)
