@@ -6,6 +6,7 @@ import sys
 import collections
 import decimal
 import model1 as IBMModel1
+import model2 as IBMModel2
 from collections import defaultdict
 from decimal import Decimal
 
@@ -41,10 +42,10 @@ def combined_train(bitext_raw):
 
     # t_b: translation probability of e->f text
     sys.stderr.write('Training forward model...\n')
-    t_b = IBMModel1.train_model(bitext, opts.iterations)
+    t_b = IBMModel1.train_model(bitext, 1)
     # t_r: translation probability of f->e text
     sys.stderr.write('Training reverse model...\n')
-    t_r = IBMModel1.train_model(reversed_bitext, opts.iterations)
+    t_r = IBMModel1.train_model(reversed_bitext, 1)
 
     combined_t = defaultdict(Decimal)
     sys.stderr.write('Calculating combined translation probability...\n')
@@ -52,7 +53,9 @@ def combined_train(bitext_raw):
         (e,f) = p_ef
         combined_t[(e,f)] = t_b[(e,f)] * t_r[(f,e)]
 
-    return combined_t
+    t,a = IBMModel2.train_model2(bitext,opts.iterations,combined_t)
+
+    return t,a
 
 if __name__ == '__main__':
     # Contains an array of all sentences in the text
@@ -60,5 +63,5 @@ if __name__ == '__main__':
     bitext_raw = [[sentence.strip().split() for sentence in pair] for pair in zip(open(f_data), open(e_data))[:opts.num_sents]]
     bitext = IBMModel1.add_null(bitext_raw)
 
-    combined_t = combined_train(bitext_raw)
-    IBMModel1.align(combined_t, bitext)
+    combined_t, combined_a = combined_train(bitext_raw)
+    IBMModel2.align2(combined_t, combined_a)
