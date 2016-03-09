@@ -32,7 +32,7 @@ english = [tuple(line.strip().split()) for line in sys.stdin]
 # tm should translate unknown words as-is with probability 1
 for word in set(sum(french,())):
   if (word,) not in tm:
-    tm[(word,)] = [models.phrase(word, 0.0)]
+    tm[(word,)] = [models.phrase(word, 0.0, word)]
 
 def maybe_write(s, verbosity):
   if opts.verbosity > verbosity:
@@ -57,7 +57,7 @@ for sent_num, (f, e) in enumerate(zip(french, english)):
     maybe_write("%f\n" % (word_logprob,),1)
   maybe_write("TOTAL LM LOGPROB: %f\n" % lm_logprob,0)
   total_logprob += lm_logprob
-  
+
   maybe_write("\nALL POSSIBLE PHRASE-TO-PHRASE ALIGNMENTS:\n",1)
   alignments = [[] for _ in e]
   for fi in xrange(len(f)):
@@ -68,14 +68,14 @@ for sent_num, (f, e) in enumerate(zip(french, english)):
           for ei in xrange(len(e)+1-len(ephrase)):
             ej = ei+len(ephrase)
             if ephrase == e[ei:ej]:
-              maybe_write("%s ||| %d, %d : %d, %d ||| %s ||| %f\n" % 
+              maybe_write("%s ||| %d, %d : %d, %d ||| %s ||| %f\n" %
                 (" ".join(f[fi:fj]), fi, fj, ei, ej, " ".join(ephrase), phrase.logprob),1)
               alignments[ei].append((ej, phrase.logprob, fi, fj))
 
   # Compute sum of probability of all possible alignments by dynamic programming.
   # To do this, recursively compute the sum over all possible alignments for each
-  # each pair of English prefix (indexed by ei) and French coverage (indexed by 
-  # bitmap v), working upwards from the base case (ei=0, v=0) [i.e. forward chaining]. 
+  # each pair of English prefix (indexed by ei) and French coverage (indexed by
+  # bitmap v), working upwards from the base case (ei=0, v=0) [i.e. forward chaining].
   # The final sum is the one obtained for the pair (ei=len(e), v=range(len(f))
   maybe_write("\nDYNAMIC PROGRAMMING SUM OVER ALIGNMENTS\n",2)
   chart = [{} for _ in e] + [{}]
@@ -85,9 +85,9 @@ for sent_num, (f, e) in enumerate(zip(french, english)):
       for ej, logprob, fi, fj in alignments[ei]:
         if bitmap(range(fi,fj)) & v == 0:
           new_v = bitmap(range(fi,fj)) | v
-          maybe_write("(%d, %s): %f + (%d, %d, %s): %f -> (%d, %s): %f\n" % 
-            (ei, bitmap2str(v,len(f)), sums[v], 
-             ei, ej, bitmap2str(bitmap(range(fi,fj)),len(f)), logprob, 
+          maybe_write("(%d, %s): %f + (%d, %d, %s): %f -> (%d, %s): %f\n" %
+            (ei, bitmap2str(v,len(f)), sums[v],
+             ei, ej, bitmap2str(bitmap(range(fi,fj)),len(f)), logprob,
              ej, bitmap2str(new_v,len(f)), sums[v]+logprob), 2)
           if new_v in chart[ej]:
             chart[ej][new_v] = logadd10(chart[ej][new_v], sums[v]+logprob)
@@ -111,5 +111,3 @@ if unaligned_sentences > 0:
   sys.stdout.write("ERROR: There were %d unaligned sentences! Only sentences that align under the model can be graded!\n" % unaligned_sentences)
 if (len(french) != len(english)) or unaligned_sentences > 0:
   sys.exit(1) # signal problem to caller
-
-

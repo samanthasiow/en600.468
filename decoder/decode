@@ -21,13 +21,13 @@ french = [tuple(line.strip().split()) for line in open(opts.input).readlines()[:
 # tm should translate unknown words as-is with probability 1
 for word in set(sum(french,())):
   if (word,) not in tm:
-    tm[(word,)] = [models.phrase(word, 0.0)]
+    tm[(word,)] = [models.phrase(word, 0.0, word)]
 
 sys.stderr.write("Decoding %s...\n" % (opts.input,))
 for f in french:
   # The following code implements a monotone decoding
   # algorithm (one that doesn't permute the target phrases).
-  # Hence all hypotheses in stacks[i] represent translations of 
+  # Hence all hypotheses in stacks[i] represent translations of
   # the first i words of the input sentence. You should generalize
   # this so that they can represent translations of *any* i words.
   hypothesis = namedtuple("hypothesis", "logprob, lm_state, predecessor, phrase")
@@ -47,9 +47,11 @@ for f in french:
             logprob += lm.end(lm_state) if j == len(f) else 0.0
             new_hypothesis = hypothesis(logprob, lm_state, h, phrase)
             if lm_state not in stacks[j] or stacks[j][lm_state].logprob < logprob: # second case is recombination
-              stacks[j][lm_state] = new_hypothesis 
+              stacks[j][lm_state] = new_hypothesis
   winner = max(stacks[-1].itervalues(), key=lambda h: h.logprob)
-  def extract_english(h): 
+
+  # returns the highest likelihood translated phrase
+  def extract_english(h):
     return "" if h.predecessor is None else "%s%s " % (extract_english(h.predecessor), h.phrase.english)
   print extract_english(winner)
 
@@ -57,5 +59,11 @@ for f in french:
     def extract_tm_logprob(h):
       return 0.0 if h.predecessor is None else h.phrase.logprob + extract_tm_logprob(h.predecessor)
     tm_logprob = extract_tm_logprob(winner)
-    sys.stderr.write("LM = %f, TM = %f, Total = %f\n" % 
+
+    # test with different order
+
+    sys.stderr.write("LM = %f, TM = %f, Total = %f\n" %
       (winner.logprob - tm_logprob, tm_logprob, winner.logprob))
+
+def get_neighbor_hypotheses(h):
+    return
