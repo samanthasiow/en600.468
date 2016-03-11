@@ -45,6 +45,8 @@ for f in french:
   # the first i words of the input sentence. You should generalize
   # this so that they can represent translations of *any* i words.
 
+  # create array. each index corresponding to a boolean of whether the foreign
+  # word at that index has been translated in the original sentence
   translated = []
   for x in range(len(f)):
     translated.append(False)
@@ -55,6 +57,9 @@ for f in french:
   stacks[0][lm.begin()] = initial_hypothesis
   # for each position in sentence f
   for i, stack in enumerate(stacks[:-1]):
+
+    # generate the next sentence. translated words in the beginning and non
+    # translated words at the end
     new_sentence = ()
     new_sentence_indeces = []
     count = 0
@@ -62,20 +67,18 @@ for f in french:
       if translated[index] is True:
         new_sentence += (f[index],)
         new_sentence_indeces.append(index)
-        # print "translated: " + str(f[index])
     for index in range(len(f)):
       if translated[index] is False:
         new_sentence += (f[index],)
         new_sentence_indeces.append(index)
         count +=1
 
-
-    # print "new_sentence: " + str(new_sentence)
-    # print "original:" + str(f)+ "\n"
     # for each hypothesis in the stack
     for h in sorted(stack.itervalues(),key=lambda h: -h.logprob)[:opts.s]: # prune
+      # dictionary mapping hypotheses to list of the indeces of the words in
+      # the original foreign sentence
       h_dict = {}
-      # for all translation options
+      # for all translation options (no swap)
       for j in xrange(i+1,len(f)+1):
         if new_sentence[i:j] in tm:
           for phrase in tm[new_sentence[i:j]]:
@@ -87,14 +90,12 @@ for f in french:
             logprob += lm.end(lm_state) if j == len(new_sentence) else 0.0
             new_hypothesis = hypothesis(logprob, lm_state, phrase, h)
             if lm_state not in stacks[j] or stacks[j][lm_state].logprob < logprob: # second case is recombination
-            #   print "french: " + str(new_sentence[i:j])
-            #   print "translated phrase: " + str(phrase) + "\n"
-            #   print "indeces: %i - %i" % (new_sentence_indeces[i], new_sentence_indeces[j-1])
+              # add the index of the word in the original sentence to a list
               phrase_indeces = []
               for index in xrange(i,j):
                 phrase_indeces.append(new_sentence_indeces[index])
               h_dict[new_hypothesis] = phrase_indeces
-
+      # generate new sentence and indeces for swapped words
       new_sentence, new_sentence_indeces = swap(new_sentence, new_sentence_indeces, i, i+1)
       for j in xrange(i+1,len(f)+1):
         if new_sentence[i:j] in tm:
@@ -107,19 +108,15 @@ for f in french:
             logprob += lm.end(lm_state) if j == len(new_sentence) else 0.0
             new_hypothesis = hypothesis(logprob, lm_state, phrase, h)
             if lm_state not in stacks[j] or stacks[j][lm_state].logprob < logprob: # second case is recombination
-            #   print "french: " + str(new_sentence[i:j])
-            #   print "swapped translated phrase: " + str(phrase) + "\n"
-            #   print "swapped indeces: %i - %i" % (new_sentence_indeces[i], new_sentence_indeces[j-1])
+              # add the index of the word in the original sentence to a list
               phrase_indeces = []
               for index in xrange(i,j):
                 phrase_indeces.append(new_sentence_indeces[index])
               h_dict[new_hypothesis] = phrase_indeces
-
+      # get the best hypothesis
       best = sorted(h_dict.iterkeys(),key=lambda h: -h.logprob)[:1]
-
-    #   print str(best[0]) + "\n"
+      # get the indeces in the original sentence
       phrase = h_dict[best[0]]
-    #   print "translated phrase: " + str(phrase) + "\n"
       # set the words as translated
       for index in phrase:
         translated[index] = True
@@ -129,9 +126,6 @@ for f in french:
         if word is True:
           count += 1
       stacks[count][best[0].lm_state] = best[0]
-    #   print "*" * 40
-    #   print str(len(f)) + "   " + str(len(stacks))
-    #   print "*" * 40
   winner = max(stacks[-1].itervalues(), key=lambda h: h.logprob)
 
 
