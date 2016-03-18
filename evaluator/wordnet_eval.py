@@ -1,0 +1,67 @@
+ #!/usr/bin/env python
+import argparse # optparse is deprecated
+from itertools import islice # slicing for iterators
+import sys
+from nltk.corpus import wordnet
+
+def word_matches(h, ref):
+    return sum(1 for w in h if w in ref)
+
+def is_ascii(s):
+    return all(ord(c) < 128 for c in s)
+
+def main():
+    parser = argparse.ArgumentParser(description='Evaluate translation hypotheses.')
+    parser.add_argument('-i', '--input', default='data/hyp1-hyp2-ref',
+            help='input file (default data/hyp1-hyp2-ref)')
+    parser.add_argument('-n', '--num_sentences', default=None, type=int,
+            help='Number of hypothesis pairs to evaluate')
+    # note that if x == [1, 2, 3], then x[:None] == x[:] == x (copy); no need for sys.maxint
+    opts = parser.parse_args()
+
+
+    # we create a generator and avoid loading all sentences into a list
+    def sentences():
+        with open(opts.input) as f:
+            for pair in f:
+                yield [sentence.strip().split() for sentence in pair.split(' ||| ')]
+
+    # note: the -n option does not work in the original code
+    for h1, h2, ref in islice(sentences(), opts.num_sentences):
+        rset = set(ref)
+        recall_weight = 10
+        weight = 11
+
+        # check wordnet for synonyms
+        for word in ref:
+            if not is_ascii(word):
+                continue
+            for syn in wordnet.synsets(word):
+                for l in syn.lemmas():
+                    rset.add(l.name())
+
+        h1_match = word_matches(h1, rset)
+        h2_match = word_matches(h2, rset)
+
+        h1_precision = float(h1_match)/float(len(ref))
+        h1_recall = float(h1_match)/float(len(h1))
+        if (h1_recall + (recall_weight * h1_precision)) == 0:
+            h1_mean = 0
+        else:
+            h1_mean = (weight * h1_precision * h1_recall) / (h1_recall + (recall_weight * h1_precision))
+
+        h2_precision = float(h2_match)/float(len(ref))
+        h2_recall = float(h2_match)/float(len(h2))
+        if (h2_recall + (recall_weight * h2_precision)) == 0:
+            h2_mean = 0
+        else:
+            h2_mean = (weight * h2_precision * h2_recall) / (h2_recall + (recall_weight * h2_precision))
+
+
+        print(1 if h1_mean > h2_mean else # \begin{cases}
+                (0 if h1_mean == h2_mean
+                    else -1)) # \end{cases}
+
+# convention to allow import of this file as a module
+if __name__ == '__main__':
+    main()
