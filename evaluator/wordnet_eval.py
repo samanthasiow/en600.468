@@ -29,6 +29,7 @@ def main():
     # note: the -n option does not work in the original code
     for h1, h2, ref in islice(sentences(), opts.num_sentences):
         rset = set(ref)
+        synonyms = set()
         recall_weight = 10
         weight = 11
 
@@ -38,10 +39,10 @@ def main():
                 continue
             for syn in wordnet.synsets(word):
                 for l in syn.lemmas():
-                    rset.add(l.name())
+                    synonyms.add(l.name())
 
-        h1_match = word_matches(h1, rset)
-        h2_match = word_matches(h2, rset)
+        h1_match = word_matches(h1, synonyms)
+        h2_match = word_matches(h2, synonyms)
 
         h1_precision = float(h1_match)/float(len(ref))
         h1_recall = float(h1_match)/float(len(h1))
