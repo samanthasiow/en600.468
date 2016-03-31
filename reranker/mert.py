@@ -76,26 +76,19 @@ def minimum_error_rate_training(weights, all_hyps, num_sents):
                 # with steepest gradient first, then sort by y intersection
             sorted_hyp_lines = sorted(hyp_lines, key=lambda element: (-element[0], -element[1]))
             print sorted_hyp_lines
-
-            
-
-
-
-
-
-                # compute line l: parameter value --> score
-            # find l with steepest descent
             # find upper envelope:
+            upper_envelope = []
             # while find line l_2 that intersects with l first
                 # add parameter value at intersection to T
                 # l = l_2
+        # --- END SAMANTHA'S STUFF ---
         # sort T by parameter value
         # compute score for value before first threshold point
         # for all t in T
             # compute score for value after t
             # if score is highest
                 # record max score and t
-        # if max scaore > current score
+        # if max score > current score
             # update parameter value
 
 # if "__name__" == "__main__":
