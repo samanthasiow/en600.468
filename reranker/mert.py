@@ -44,6 +44,7 @@ def minimum_error_rate_training(weights, all_hyps, num_sents):
 
     # for all parameters
     for w in weights:
+        print weights
         # set of threshold points T
         threshold_set = set()
         # for all sentences
@@ -55,19 +56,25 @@ def minimum_error_rate_training(weights, all_hyps, num_sents):
             for (num, hyp, feats) in hyps_for_one_sent:
                 print '\tnum', num, 'hyp', hyp
                 # get slope and intersection to define line
-                slope = 0.0 # slope = value of the feature
-                intersection = 0.0 # intersection = sum of other weights * value of feature
+                gradient = 0.0 # gradient = value of the feature
+                y_intersect = 0.0 # y_intersect = sum of other weights * value of feature
                 alt_weight_sum = 0.0
                 for feat in feats.split(' '):
-                  (k, v) = feat.split('=')
-                  print '\t\tfeature key', k, 'feature value', v
-                  # get the parameter that we are interested in
-                  if k == w:
-                      slope = float(v)
-                  else:
-                      alt_weight_sum += float(weights[k])
-                intersection = float(alt_weight_sum * slope)
-                
+                    (k, v) = feat.split('=')
+                    print '\t\tfeature key', k, 'feature value', v
+                    # get the parameter that we are interested in
+                    if k == w:
+                        gradient = float(v)
+                    else:
+                        alt_weight_sum += float(weights[k])
+                y_intersect = float(alt_weight_sum * gradient)
+                print 'gradient', gradient, 'combined weight', alt_weight_sum
+                # line = (gradient, y_intersect, hypothesis, sentence number for reference)
+                hyp_lines.append((gradient,y_intersect,hyp,s))
+                # sort lines in descending order, with steepest gradient first
+                hyp_lines.sort(reverse=True)
+                print hyp_lines
+
 
 
 
