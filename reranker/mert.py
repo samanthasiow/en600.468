@@ -71,14 +71,29 @@ def minimum_error_rate_training(weights, all_hyps, num_sents):
                 print 'gradient', gradient, 'combined weight', alt_weight_sum
                 # line = (gradient, y_intersect,
                 #           hypothesis, sentence number for reference)
-                hyp_lines.append((gradient,y_intersect,hyp,s))
+                line = {'m': gradient, 'c': y_intersect, 'hyp': hyp, 'line_num': s}
+                hyp_lines.append(line)
                 # sort lines in descending order,
                 # with steepest gradient first, then sort by y intersection
-            sorted_hyp_lines = sorted(hyp_lines, key=lambda element: (-element[0], -element[1]))
-            print sorted_hyp_lines
+            sorted_hyp_lines = sorted(hyp_lines, key=lambda element: (-element['m'], -element['c']))
             # find upper envelope:
             upper_envelope = []
+            i = 0
+            while i+1 < len(sorted_hyp_lines):
             # while find line l_2 that intersects with l first
+                # TODO: Check if m is the same (lines are parallel, take the line with higher c)
+                l_1 = sorted_hyp_lines[i] # y = ax + c
+                l_2 = sorted_hyp_lines[i+1] # y = bx + d
+                # intersection point
+                # x = (d-c)/(a-b)
+                x_numerator = l_2['c'] - l_1['c']
+                x_denominator = l_1['m'] - l_2['m']
+                x = float(x_numerator / x_denominator)
+                # y = a(x) + c
+                y = l_1['m'] * x + l_1['c']
+
+                i += 1
+
                 # add parameter value at intersection to T
                 # l = l_2
         # --- END SAMANTHA'S STUFF ---
