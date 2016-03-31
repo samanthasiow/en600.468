@@ -76,6 +76,14 @@ def minimum_error_rate_training(weights, all_hyps, num_sents):
                 # sort lines in descending order,
                 # with steepest gradient first, then sort by y intersection
             sorted_hyp_lines = sorted(hyp_lines, key=lambda element: (-element['m'], -element['c']))
+            # get steepest lines
+            steepest_lines = {}
+            for i,line in enumerate(sorted_hyp_lines):
+                if line['m'] in steepest_lines:
+                    if line['c'] > steepest_lines[line['m']]['c']:
+                        steepest_lines[line['m']] = line
+                else:
+                    steepest_lines[line['m']] = line
             # find upper envelope:
             upper_envelope = []
             i = 0
@@ -84,7 +92,10 @@ def minimum_error_rate_training(weights, all_hyps, num_sents):
                 # TODO: Check if m is the same (lines are parallel, take the line with higher c)
                 l_1 = sorted_hyp_lines[i] # y = ax + c
                 l_2 = sorted_hyp_lines[i+1] # y = bx + d
-                # intersection point
+                if l_1['m'] == l_2['m']:
+                    i += 1
+                    continue
+                # intersection point x,y
                 # x = (d-c)/(a-b)
                 x_numerator = l_2['c'] - l_1['c']
                 x_denominator = l_1['m'] - l_2['m']
