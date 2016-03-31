@@ -69,11 +69,16 @@ def minimum_error_rate_training(weights, all_hyps, num_sents):
                         alt_weight_sum += float(weights[k])
                 y_intersect = float(alt_weight_sum * gradient)
                 print 'gradient', gradient, 'combined weight', alt_weight_sum
-                # line = (gradient, y_intersect, hypothesis, sentence number for reference)
+                # line = (gradient, y_intersect,
+                #           hypothesis, sentence number for reference)
                 hyp_lines.append((gradient,y_intersect,hyp,s))
-                # sort lines in descending order, with steepest gradient first
-                hyp_lines.sort(reverse=True)
-                print hyp_lines
+                # sort lines in descending order,
+                # with steepest gradient first, then sort by y intersection
+            sorted_hyp_lines = sorted(hyp_lines, key=lambda element: (-element[0], -element[1]))
+            print sorted_hyp_lines
+
+            
+
 
 
 
