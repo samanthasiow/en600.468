@@ -26,7 +26,7 @@ def compute_line(translation):
 
 def compute_score(weights, refs, hyps):
     tot_stats = [0 for i in xrange(10)]
-    blist = []
+    hyp_list = []
     for s in xrange(0, num_sents):
         hyps_for_one_sent = all_hyps[s * 100:s * 100 + 100]
         (best_score, best) = (-1e300, '')
@@ -37,9 +37,12 @@ def compute_score(weights, refs, hyps):
                 score += weights[k] * float(v)
             if score > best_score:
                 (best_score, best) = (score, hyp)
-        for i in xrange(len(tot_stats)):
-            tot_stats[i] += best[i]
-    return float(bleu.bleu(tot_stats))
+        hyp_list.append("%s\n" % best)
+    for (r,h) in zip(refs, hyp_list):
+        tot_stats = [sum(s) for s in zip(tot_stats, bleu.bleu_stats(r, h))]
+        # for i in xrange(len(tot_stats)):
+        #     tot_stats[i] += int(best[i])
+    return bleu.bleu(tot_stats)
 
 def get_interval(l):
     point1 = l.pop()
@@ -225,8 +228,6 @@ def minimum_error_rate_training(weights, all_hyps, num_sents):
             weights[w] = best_v
 
 
-        
-
     for s in xrange(0, num_sents):
       hyps_for_one_sent = all_hyps[s * 100:s * 100 + 100]
       (best_score, best) = (-1e300, '')
@@ -244,8 +245,8 @@ def minimum_error_rate_training(weights, all_hyps, num_sents):
 
 
 
-if "__name__" == "__main__":
-    minimum_error_rate_training(weights, all_hyps, num_sents)
+# if "__name__" == "__main__":
+minimum_error_rate_training(weights, all_hyps, num_sents)
 
 # for s in xrange(0, num_sents):
 #     for i in xrange(0, 100): # iterate n times
