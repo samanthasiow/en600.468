@@ -7,7 +7,7 @@ import bleu
 optparser = optparse.OptionParser()
 optparser.add_option("-k", "--kbest-list", dest="input", default="data/dev+test.100best", help="100-best translation lists")
 optparser.add_option("-l", "--lm", dest="lm", default=-1.0, type="float", help="Language model weight")
-optparser.add_option("-r", "--ref-list", dest="ref", default="data/dev.ref", help="Reference translation lists")
+optparser.add_option("-r", "--ref-list", dest="ref", default="data/dev+train.ref", help="Reference translation lists")
 optparser.add_option("-t", "--tm1", dest="tm1", default=-0.5, type="float", help="Translation model p(e|f) weight")
 optparser.add_option("-s", "--tm2", dest="tm2", default=-0.5, type="float", help="Lexical translation model p_lex(f|e) weight")
 (opts, _) = optparser.parse_args()
