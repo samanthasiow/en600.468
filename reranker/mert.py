@@ -2,10 +2,12 @@
 import optparse
 import sys
 import random
+import bleu
 
 optparser = optparse.OptionParser()
 optparser.add_option("-k", "--kbest-list", dest="input", default="data/dev+test.100best", help="100-best translation lists")
 optparser.add_option("-l", "--lm", dest="lm", default=-1.0, type="float", help="Language model weight")
+optparser.add_option("-r", "--ref-list", dest="ref", default="data/dev.ref", help="Reference translation lists")
 optparser.add_option("-t", "--tm1", dest="tm1", default=-0.5, type="float", help="Translation model p(e|f) weight")
 optparser.add_option("-s", "--tm2", dest="tm2", default=-0.5, type="float", help="Lexical translation model p_lex(f|e) weight")
 (opts, _) = optparser.parse_args()
@@ -14,6 +16,7 @@ weights = {'p(e)'       : float(opts.lm) ,
            'p_lex(f|e)' : float(opts.tm2)}
 
 all_hyps = [pair.split(' ||| ') for pair in open(opts.input)]
+all_refs = [ref.strip() for ref in open(opts.ref)]
 num_sents = len(all_hyps) / 100
 
 # return slope of line for each translation
@@ -46,10 +49,11 @@ def minimum_error_rate_training(weights, all_hyps, num_sents):
     for w in rand_weights:
         print weights
         # set of threshold points T
-        threshold_set = set()
+        threshold_set = []
         # for all sentences
         for s in xrange(0, num_sents):
             print 'for sentence', s
+            reference = all_refs[s]
             # for all translations
             hyps_for_one_sent = all_hyps[s * 100:s * 100 + 100]
             hyp_lines = []
@@ -71,7 +75,7 @@ def minimum_error_rate_training(weights, all_hyps, num_sents):
                 print 'gradient', gradient, 'combined weight', alt_weight_sum
                 # line = (gradient, y_intersect,
                 #           hypothesis, sentence number for reference)
-                line = {'m': gradient, 'c': y_intersect, 'hyp': hyp, 'line_num': s}
+                line = {'m': gradient, 'c': y_intersect, 'hyp': hyp, 'ref': reference}
                 hyp_lines.append(line)
                 # sort lines in descending order,
                 # with steepest gradient first, then sort by y intersection
@@ -107,7 +111,8 @@ def minimum_error_rate_training(weights, all_hyps, num_sents):
                     # y = a(x) + c
                     y = l_1['m'] * x + l_1['c']
                     # save all intersection points of other lines with l_1
-                    intersection_points[(x,y,l_2['hyp'],l_2['line_num'])] = j
+                    # [0]: x, [1]: y, [2]: (l_1['hyp'], l_2['hyp']), [3]: reference
+                    intersection_points[(x,y,(l_1['hyp'], l_2['hyp']),reference)] = j
 
                 if len(intersection_points) == 0:
                     print 'finished calculating upper envelope'
@@ -119,12 +124,42 @@ def minimum_error_rate_training(weights, all_hyps, num_sents):
 
                     # l = l_2
                     i = intersection_points[min_line_intersect]
-            print upper_envelope
+            # add parameter value at intersection
+            # parameter points in the format:
+            # x_1, x_2, bleu score, tuple(hypothesis 1, ref)
+            # where x_1 is the start of the interval, and x_2 is the end of the interval
+            for index, point in enumerate(upper_envelope):
+                # first point starts at infinity
+                if index == 0:
+                    parameter = {
+                                    'x_1': float('-inf'),
+                                    'x_2': point[1],
+                                     'score': bleu.bleu_stats(point[2][0], point[3]),
+                                     'hyp': point[2][0],
+                                     'ref': point[3]
+                                 }
+                else:
+                    parameter = {
+                                    'x_1': previous_x,
+                                    'x_2': point[1],
+                                    'score': bleu.bleu_stats(point[2][0], point[3]),
+                                    'hyp': point[2][0],
+                                    'ref': point[3]
+                                 }
+                threshold_set.append(parameter)
+                previous_x = point[1]
+                # last point ends at infinity
+                if index+1 == len(upper_envelope):
+                    parameter = {
+                                    'x_1': previous_x,
+                                    'x_2': float('-inf'),
+                                    'score': bleu.bleu_stats(point[2][1], point[3]),
+                                    'hyp': point[2][1],
+                                    'ref': point[3]
+                                 }
+                    threshold_set.append(parameter)
 
 
-
-                # add parameter value at intersection to T
-                # l = l_2
         # --- END SAMANTHA'S STUFF ---
         # sort T by parameter value
         # compute score for value before first threshold point
