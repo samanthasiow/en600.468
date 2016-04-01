@@ -74,32 +74,32 @@ def minimum_error_rate_training(weights, all_hyps, num_sents):
     curr_score = compute_score(rand_weights,  all_refs, all_hyps)
     for w in rand_weights:
 
-        print weights
+        # print weights
         # set of threshold points T
         threshold_set = []
         # for all sentences
         for s in xrange(0, num_sents):
-            print 'for sentence', s
+            # print 'for sentence', s
             reference = all_refs[s]
             # for all translations
             hyps_for_one_sent = all_hyps[s * 100:s * 100 + 100]
             hyp_lines = []
             for (num, hyp, feats) in hyps_for_one_sent:
-                print '\tnum', num, 'hyp', hyp
+                # print '\tnum', num, 'hyp', hyp
                 # get slope and intersection to define line
                 gradient = 0.0 # gradient = value of the feature
                 y_intersect = 0.0 # y_intersect = sum of other weights * value of feature
                 alt_weight_sum = 0.0
                 for feat in feats.split(' '):
                     (k, v) = feat.split('=')
-                    print '\t\tfeature key', k, 'feature value', v
+                    # print '\t\tfeature key', k, 'feature value', v
                     # get the parameter that we are interested in
                     if k == w:
                         gradient = float(v)
                     else:
                         alt_weight_sum += float(rand_weights[k])
                 y_intersect = float(alt_weight_sum * gradient)
-                print 'gradient', gradient, 'combined weight', alt_weight_sum
+                # print 'gradient', gradient, 'combined weight', alt_weight_sum
                 # line = (gradient, y_intersect,
                 #           hypothesis, sentence number for reference)
                 line = {'m': gradient, 'c': y_intersect, 'hyp': hyp, 'ref': reference}
@@ -199,7 +199,9 @@ def minimum_error_rate_training(weights, all_hyps, num_sents):
 
         #sort threshold set based on the bleu score
         threshold_set = sorted(threshold_set, key=lambda x: x["score"])
-        points = [(x1, x2) for x1, x2, score, hyp, ref in threshold_set]
+        points = []
+        for dic in threshold_set:
+            points.append((dic['x_1'], dic['x_2']))
         point_list = []
         for point in points:
             point_list.append(point[0])
@@ -210,8 +212,9 @@ def minimum_error_rate_training(weights, all_hyps, num_sents):
         t_weights = rand_weights
         start, end = get_interval(point_list)
 
-        max_score = compute_score(rand_weights)
+        max_score = compute_score(rand_weights, all_refs, all_hyps)
         while point_list:
+            print "."
             val = (start+end)/float(2)
             t_weights[w] = val
             score = compute_score(t_weights, all_refs, all_hyps)
@@ -222,12 +225,14 @@ def minimum_error_rate_training(weights, all_hyps, num_sents):
             end = point_list.pop()
 
         if max_score > curr_score:
+            print "!"
             curr_score = max_score
             best_w = w
             best_v = best_val
             weights[w] = best_v
+            print weights
 
-
+    print "PRINTING SENTENCES"
     for s in xrange(0, num_sents):
       hyps_for_one_sent = all_hyps[s * 100:s * 100 + 100]
       (best_score, best) = (-1e300, '')
