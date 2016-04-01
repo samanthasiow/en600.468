@@ -25,10 +25,10 @@ def minimum_error_rate_training(weights, all_hyps, num_sents):
     # # repeat till convergence
     # # for all parameters
     # weight_hypothesis = [weights.copy()] #inialize the possible weights
-    # rand_weights = {
-    #     'p(e)'       : random.uniform(-3,3),
-    #     'p(e|f)'     : random.uniform(-3,3),
-    #     'p_lex(f|e)' : random.uniform(-3,3)}
+    rand_weights = {
+        'p(e)'       : random.uniform(-3,3),
+        'p(e|f)'     : random.uniform(-3,3),
+        'p_lex(f|e)' : random.uniform(-3,3)}
     # # append randomized weights to hypothesis
     # weight_hypothesis.append(rand_weights)
     # # for each weight hypothesis
@@ -43,7 +43,7 @@ def minimum_error_rate_training(weights, all_hyps, num_sents):
     #             compute_line(t)
 
     # for all parameters
-    for w in weights:
+    for w in rand_weights:
         print weights
         # set of threshold points T
         threshold_set = set()
@@ -66,7 +66,7 @@ def minimum_error_rate_training(weights, all_hyps, num_sents):
                     if k == w:
                         gradient = float(v)
                     else:
-                        alt_weight_sum += float(weights[k])
+                        alt_weight_sum += float(rand_weights[k])
                 y_intersect = float(alt_weight_sum * gradient)
                 print 'gradient', gradient, 'combined weight', alt_weight_sum
                 # line = (gradient, y_intersect,
@@ -87,23 +87,41 @@ def minimum_error_rate_training(weights, all_hyps, num_sents):
             # find upper envelope:
             upper_envelope = []
             i = 0
-            while i+1 < len(sorted_hyp_lines):
             # while find line l_2 that intersects with l first
-                # TODO: Check if m is the same (lines are parallel, take the line with higher c)
+            while i+1 < len(sorted_hyp_lines):
+                # intersection points in order
+                intersection_points = {}
                 l_1 = sorted_hyp_lines[i] # y = ax + c
-                l_2 = sorted_hyp_lines[i+1] # y = bx + d
-                if l_1['m'] == l_2['m']:
-                    i += 1
-                    continue
-                # intersection point x,y
-                # x = (d-c)/(a-b)
-                x_numerator = l_2['c'] - l_1['c']
-                x_denominator = l_1['m'] - l_2['m']
-                x = float(x_numerator / x_denominator)
-                # y = a(x) + c
-                y = l_1['m'] * x + l_1['c']
 
-                i += 1
+                # find line l_2 that intersects with l_1 first
+                for j in xrange(i+1, len(sorted_hyp_lines)):
+                    l_2 = sorted_hyp_lines[j] # y = bx + d
+                    # Check if m is the same (lines are parallel, take the line with higher c)
+                    if l_1['m'] == l_2['m']:
+                        continue
+                    # intersection point x,y
+                    # x = (d-c)/(a-b)
+                    x_numerator = float(l_2['c']) - float(l_1['c'])
+                    x_denominator = float(l_1['m']) - float(l_2['m'])
+                    x = float(x_numerator / x_denominator)
+                    # y = a(x) + c
+                    y = l_1['m'] * x + l_1['c']
+                    # save all intersection points of other lines with l_1
+                    intersection_points[(x,y,l_2['hyp'],l_2['line_num'])] = j
+
+                if len(intersection_points) == 0:
+                    print 'finished calculating upper envelope'
+                    break
+                else:
+                    # minimum intersection point with l_1 = first intersection with l_2
+                    min_line_intersect = min(intersection_points)
+                    upper_envelope.append(min_line_intersect)
+
+                    # l = l_2
+                    i = intersection_points[min_line_intersect]
+            print upper_envelope
+
+
 
                 # add parameter value at intersection to T
                 # l = l_2
